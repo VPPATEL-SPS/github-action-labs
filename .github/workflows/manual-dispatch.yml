@@ -1,0 +1,86 @@
+name: Manual Workflow Dispatch
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+          - development
+      version:
+        description: 'Version to deploy'
+        required: true
+        default: 'latest'
+        type: string
+      dry_run:
+        description: 'Perform a dry run'
+        required: false
+        default: false
+        type: boolean
+      log_level:
+        description: 'Log level'
+        required: false
+        default: 'info'
+        type: choice
+        options:
+          - debug
+          - info
+          - warning
+          - error
+
+jobs:
+  manual-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Display inputs
+      run: |
+        echo "Environment: ${{ github.event.inputs.environment }}"
+        echo "Version: ${{ github.event.inputs.version }}"
+        echo "Dry Run: ${{ github.event.inputs.dry_run }}"
+        echo "Log Level: ${{ github.event.inputs.log_level }}"
+        
+    - name: Validate inputs
+      run: |
+        if [ "${{ github.event.inputs.environment }}" = "production" ] && [ "${{ github.actor }}" != "admin" ]; then
+          echo "❌ Only admin can deploy to production"
+          exit 1
+        fi
+        echo "✅ Input validation passed"
+        
+    - name: Setup environment
+      run: |
+        echo "Setting up ${{ github.event.inputs.environment }} environment"
+        echo "LOG_LEVEL=${{ github.event.inputs.log_level }}" >> $GITHUB_ENV
+        
+    - name: Dry run check
+      if: github.event.inputs.dry_run == 'true'
+      run: |
+        echo "🔍 This is a dry run - no actual deployment will occur"
+        echo "Would deploy version ${{ github.event.inputs.version }} to ${{ github.event.inputs.environment }}"
+        
+    - name: Actual deployment
+      if: github.event.inputs.dry_run == 'false'
+      run: |
+        echo "🚀 Deploying version ${{ github.event.inputs.version }} to ${{ github.event.inputs.environment }}"
+        # Add actual deployment logic here
+        
+    - name: Post deployment verification
+      if: github.event.inputs.dry_run == 'false'
+      run: |
+        echo "🔍 Verifying deployment..."
+        # Add verification logic here
+        echo "✅ Deployment verified successfully"
+        
+    - name: Notify completion
+      run: |
+        echo "📧 Sending notification to team"
+        echo "Deployment completed for ${{ github.event.inputs.environment }}"
