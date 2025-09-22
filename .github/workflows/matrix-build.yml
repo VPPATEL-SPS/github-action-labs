@@ -1,0 +1,60 @@
+name: Matrix Build
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: [16, 18, 20]
+        include:
+          - os: ubuntu-latest
+            node-version: 16
+            experimental: false
+          - os: ubuntu-latest
+            node-version: 21
+            experimental: true
+        exclude:
+          - os: windows-latest
+            node-version: 16
+            
+    continue-on-error: ${{ matrix.experimental || false }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        
+    - name: Install dependencies (Unix)
+      if: runner.os != 'Windows'
+      run: npm ci
+      
+    - name: Install dependencies (Windows)
+      if: runner.os == 'Windows'
+      run: npm ci
+      shell: cmd
+      
+    - name: Run tests
+      run: npm test
+      
+    - name: Build project
+      run: npm run build
+      
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-${{ matrix.os }}-node${{ matrix.node-version }}
+        path: dist/
+        retention-days: 7

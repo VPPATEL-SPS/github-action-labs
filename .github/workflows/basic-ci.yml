@@ -1,0 +1,37 @@
+name: Basic CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup environment
+      run: |
+        echo "Setting up basic CI environment"
+        echo "Current directory: $(pwd)"
+        echo "Available files:"
+        ls -la
+        
+    - name: Run basic checks
+      run: |
+        echo "Running basic checks..."
+        echo "✅ Code checkout successful"
+        echo "✅ Environment setup complete"
+        
+    - name: Display system information
+      run: |
+        echo "System Information:"
+        echo "OS: $(uname -s)"
+        echo "Kernel: $(uname -r)"
+        echo "Architecture: $(uname -m)"
+        echo "Available disk space:"
+        df -h
